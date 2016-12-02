@@ -1,10 +1,31 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <string.h>
 
 int trialCount = 3;
 
+typedef struct PINMessage{
+	char accountNum[5];
+	char pin[3];
+	
+}PINMessage;
+
 int main (void){
+	
+	int key, mask, msgid;
+
+	key = getuid();
+	mask = 0666;
+	msgid = msgget(key, mask);	
+	if (msgid == -1) {
+		msgid = msgget(key, mask | IPC_CREAT);
+		if (msgid == -1) {
+			fprintf(stderr, "Could not create message queue.\n");
+			exit(EXIT_FAILURE);
+		}
+		
+		
 	
 	while(1){
 		//Get account information
@@ -23,9 +44,9 @@ int main (void){
 		}else{
 			//if the message is received check if its okay or not
 			if(isOK(message){
-				tiralCount = 3;
+				trialCount = 3;
 				//repeat till terminated
-				while(true){
+				while(1){
 					//request user for request funds or withdraw
 					int response = requestUserForNextStep();
 					if(response == 1{ //request Funds
@@ -34,7 +55,7 @@ int main (void){
 							printf("Message Receive Failed\n");
 							break;
 						}else{
-							printf("Avilable Funds: %d\n",message.Data);
+							printf("Available Funds: %d\n",message.Data);
 						}
 					}else if(response == 2){ //withdraw
 						int funds = requestWithdrawAmount();
@@ -46,11 +67,17 @@ int main (void){
 							//check if enough funds
 							if(isEnough(){
 								printf("Enough Funds\n");
+								break;
 							}else{
 								//if not enough start for a new customer
 								printf("Not Enough Funds\n");
 								trialCount = 3;
-								break;
+								int response = RequestContinue();
+								if(response == 1){
+									continue;
+								}else{
+									break;
+								}
 							}
 						}
 					}else{
@@ -75,3 +102,55 @@ int main (void){
 	
 	return 1;
 }
+
+//This method requests account number and pin from the customer
+void requestAccountInformation(PINMessage aInfo){
+	
+	//Requests an account number
+	requestCustomer(aInfo,5);
+	
+	//Requests a PIN
+	requestCustomer(aInfo,3);
+}
+
+//Here if it requests the account number then the maxSize is 5 and 
+//if it requests the pin, then the maxSize is 3
+void requestCustomer(PINMessage aInfo, int maxSize){
+	char userInput[100];
+	while(1){
+		printf("Enter your %d digit account number: ",maxSize);
+		scanf("%s", userInput);
+		
+		if(strlen(userInput) != maxSize){
+			printf("Invalid entry\n");
+			continue;
+		}
+		
+		else{
+			if(maxSize == 5){
+				aInfo.accountNum = userInput;
+			}
+			else{
+				aInfo.pin = userInput;
+			}
+			break;
+		}
+	}
+	
+}
+
+
+	
+	
+
+}
+
+int sendMessageToDBServer(createPINMessage(accountNumber, pinNumber)){
+	
+	
+}
+
+int receiveMessageFromDBServer(){
+	
+}
+
