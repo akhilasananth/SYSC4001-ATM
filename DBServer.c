@@ -38,6 +38,7 @@ char * prevAccount;
 int ATMServerMsgqid;
 int ServerATMMsgqid;
 int ServerEditorMsgqid;
+int trials = 0;
 
 int main (void){
 	
@@ -59,16 +60,31 @@ void DBServer(){
 			exit(1);
 		}
 		else{
+			if(trial => 3){
+				blockAccount(ATMMessage);
+				printf("Sorry out of trials");
+				
+			}
+				
 			//switch case
 			switch(ATMMessage.message_type){ //act acording to each case
 				case 1: //pin message
 					printf("PIN Message Received From ATM\n");
-					
+					int accountExists = 0;
+					trials +=1;
 					//check if ok or not okay
 					for(int i = 0; i < sizeof(database); i++){
 						if(ATMMessage.accountInfo.accountNum == database[i].accountNumber){
-
+							if(strcmp(database[i].encodedPIN, decodePIN(ATMMessage.accountInfo.accountNum)) == 0){
+								printf("OK");
+								accountExists = 1;
+							}
 							
+						}
+					}
+					if(accountExists == 0){
+						printf("NOT OK");
+					}
 							
 					} 
 					//and respond accordingly
@@ -209,20 +225,50 @@ int receiveMessageFromDBEditor(my_message msg){
 }
 
 void blockAccount(my_message mg){
-	
+	char faultyAccount[5] = mg.accountInfo.accountNum;
+	faultyAccount[0] = 'X';
+	return faultyAccount;
 }
 
-void encodePIN(char original[], char encrypted[]){
-	
-}
-
-void decodePIN(char original[], char decrypted[]){
+void char[3] encodePIN(char ePin[3]){
 	int pin1;
 	int pin2;
 	int pin3;
+	int finalVal;
+	char finalPin[3];
 	
+	pin1 = atoi(ePin[0]);
+	pin2 = atoi(ePin[1]);
+	pin3 = atoi(ePin[2]);
 	
+	pin1 +=1;
+	pin2 +=1;
+	pin3 +=1;
 	
+	finalVal = (pin1*100) + (pin2*10) + pin3;
+	sprintf(finalPin, "%d", finalVal);
 	
+	return finalPin;
+}
+
+void char[3] decodePIN(char ePin[3]){
+	int pin1;
+	int pin2;
+	int pin3;
+	int finalVal;
+	char finalPin[3];
+	
+	pin1 = atoi(ePin[0]);
+	pin2 = atoi(ePin[1]);
+	pin3 = atoi(ePin[2]);
+	
+	pin1 -=1;
+	pin2 -=1;
+	pin3 -=1;
+	
+	finalVal = (pin1*100) + (pin2*10) + pin3;
+	sprintf(finalPin, "%d", finalVal);
+	
+	return finalPin;
 }
 
