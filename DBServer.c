@@ -17,8 +17,8 @@ int receiveMessageFromDBServer(my_message msg);
 int receiveMessageFromDBEditor(my_message msg);
 int withdrawFromAccount(my_message msg);
 void blockAccount(my_message mg);
-void encrypt(char original[], char encrypted[]);
-void decrypt(char original[], char decrypted[]);
+void encodePIN(char originalPin[3],char encodedPin[3]);
+void decodePIN(char originalPin[3],char decodedPin[3]);
 
 //Fils names
 //char *DBFilename = "DB.txt";
@@ -60,7 +60,7 @@ void DBServer(){
 			exit(1);
 		}
 		else{
-			if(trial => 3){
+			if(trials >= 3){
 				blockAccount(ATMMessage);
 				printf("Sorry out of trials");
 				
@@ -71,11 +71,14 @@ void DBServer(){
 				case 1: //pin message
 					printf("PIN Message Received From ATM\n");
 					int accountExists = 0;
+					char decodedPin[3];
+					int i;
 					trials +=1;
 					//check if ok or not okay
-					for(int i = 0; i < sizeof(database); i++){
+					for(i = 0; i < sizeof(database); i++){
 						if(ATMMessage.accountInfo.accountNum == database[i].accountNumber){
-							if(strcmp(database[i].encodedPIN, decodePIN(ATMMessage.accountInfo.accountNum)) == 0){
+							decodePIN(ATMMessage.accountInfo.pin,decodedPin);
+							if(strcmp(database[i].encodedPIN, decodedPin) == 0){
 								printf("OK");
 								accountExists = 1;
 							}
@@ -86,7 +89,6 @@ void DBServer(){
 						printf("NOT OK");
 					}
 							
-					} 
 					//and respond accordingly
 					//TODO
 					break;
@@ -194,8 +196,8 @@ my_message readFromDatabase(my_message msg){
 		fgets(line, sizeof(line), DB);
 		sscanf(line, "%s\t%s\t%f\n", accountNum, PINnumber,&funds);
 		if(strcmp(msg.accountInfo.accountNum,accountNum)){
-			pinMessage.accountNum = accountNum;
-			pinMessage.pin = PINnumber;
+			strcpy(pinMessage.accountNum,accountNum);
+			strcpy(pinMessage.pin, PINnumber);
 			result.accountInfo = pinMessage;
 			result.funds = funds;
 			break;
@@ -224,51 +226,31 @@ int receiveMessageFromDBEditor(my_message msg){
 	return msgrcv(ServerEditorMsgqid, &msg, msgLength, 6, 0);
 }
 
-void blockAccount(my_message mg){
-	char faultyAccount[5] = mg.accountInfo.accountNum;
-	faultyAccount[0] = 'X';
-	return faultyAccount;
+void blockAccount(my_message msg){
+	msg.accountInfo.accountNum[0] = 'X';
 }
 
-void char[3] encodePIN(char ePin[3]){
-	int pin1;
-	int pin2;
-	int pin3;
-	int finalVal;
-	char finalPin[3];
-	
-	pin1 = atoi(ePin[0]);
-	pin2 = atoi(ePin[1]);
-	pin3 = atoi(ePin[2]);
-	
-	pin1 +=1;
-	pin2 +=1;
-	pin3 +=1;
-	
-	finalVal = (pin1*100) + (pin2*10) + pin3;
-	sprintf(finalPin, "%d", finalVal);
-	
-	return finalPin;
+void encodePIN(char originalPin[3],char encodedPin[3]){
+	int i;
+	for(i = 0; i < sizeof(originalPin); i++){
+		if(originalPin[i] == '9'){
+			encodedPin[i] = '0';
+		}
+		else{
+			encodedPin[i] = originalPin[i] +1;
+		} 
+	}
 }
-
-void char[3] decodePIN(char ePin[3]){
-	int pin1;
-	int pin2;
-	int pin3;
-	int finalVal;
-	char finalPin[3];
 	
-	pin1 = atoi(ePin[0]);
-	pin2 = atoi(ePin[1]);
-	pin3 = atoi(ePin[2]);
+void decodePIN(char originalPin[3],char decodedPin[3]){
 	
-	pin1 -=1;
-	pin2 -=1;
-	pin3 -=1;
-	
-	finalVal = (pin1*100) + (pin2*10) + pin3;
-	sprintf(finalPin, "%d", finalVal);
-	
-	return finalPin;
+	int i;
+	for(i = 0; i < sizeof(originalPin); i++){
+		if(originalPin[i] == '0'){
+			decodedPin[i] = '9';
+		}
+		else{
+			decodedPin[i] = originalPin[i] -1;
+		} 
+	}
 }
-
