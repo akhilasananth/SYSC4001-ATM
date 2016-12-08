@@ -10,6 +10,7 @@ static const long updateDB = 6;
 static const long notEnoughFunds = 7;
 static const long enoughFunds = 8;
 static const long getFunds = 9;
+static const long blockedMessage = 10;
 
 
 #endif

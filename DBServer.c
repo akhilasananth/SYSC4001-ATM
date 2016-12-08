@@ -8,13 +8,12 @@
 #include "messageStructs.h"
 
 void initializeDatabase();
+void updateDatabase(my_message msg);
 void createMessageQueues();
 void DBServer();
 void writeToDatabase();
 my_message readFromDatabase();
 int sendMessageToDBServer(my_message msg);
-int receiveMessageFromDBServer(my_message msg);
-int receiveMessageFromDBEditor(my_message msg);
 int withdrawFromAccount(my_message msg);
 void blockAccount(my_message mg);
 int searchDatabase(my_message msg);
@@ -24,20 +23,20 @@ int getSize();
 
 //Database 
 typedef struct Account{
-	char accountNumber[5];
-	char encodedPIN[3];
-	float fundsAvailable; 
+	char accountNumber[6];
+	char encodedPIN[4];
+	float fundsAvailable;
+	int attempts;
 }Account;
 
-Account database[5]; // The bank allows 5 accounts. It's a pretty small bank 
+Account database[3]; // The bank allows 5 accounts. It's a pretty small bank 
 
 //Variables 
-int attempts = 0;
 char * prevAccount;
 int ATMServerMsgqid;
 int ServerATMMsgqid;
 int ServerEditorMsgqid;
-int trials = 0;
+//int trials = 0;
 
 int main (void){
 	printf("Starting Server...\n");
@@ -52,21 +51,18 @@ void DBServer(){
 	while(1){
 		//receive all from atm
 		my_message ATMMessage;
-		
-		if(receiveMessageFromDBServer(ATMMessage) == -1){
+		int msgLength = sizeof(my_message) - sizeof(long);
+		if(msgrcv(ATMServerMsgqid, &ATMMessage, msgLength, 0, IPC_NOWAIT) == -1){
 			//If receiving failed print error and exit
-			perror("msgrcv: msgrcv from atm failed\n");
-			exit(1);
 		}
 		else{	
 			//switch case
 			printf("Message Received\n");
-			printf("Message type: %ld\n",ATMMessage.message_type);
-			printf("Funds: %f\n",ATMMessage.funds);
 			switch(ATMMessage.message_type){ //act acording to each case
 				case 1: //pin message
 					printf("PIN Message Received From ATM\n");
 					int i = searchDatabase(ATMMessage);
+					printf("database index: %d\n",i);
 					if(i == -1){
 						my_message notOkMessage;
 						notOkMessage.message_type = notOk;
@@ -78,15 +74,12 @@ void DBServer(){
 						else{
 							printf("msgsnd: msgsnd to ATM sucess\n");
 						}
-						trials +=1;
-						if(trials == 3){
-							blockAccount(ATMMessage);
-						}
 					}
 					else{
-						char decodedPin[3];
+						char decodedPin[4];
 						decodePIN(database[i].encodedPIN,decodedPin);
 						if(strcmp(ATMMessage.accountInfo.pin, decodedPin) == 0){
+							database[i].attempts = 0;
 							my_message okMessage;
 							okMessage.message_type = ok;
 							okMessage.accountInfo = ATMMessage.accountInfo;
@@ -99,13 +92,31 @@ void DBServer(){
 							}
 							continue;
 						}
+						else{
+							my_message notOkMessage;
+							notOkMessage.message_type = notOk;
+							notOkMessage.accountInfo = ATMMessage.accountInfo;
+							if(sendMessageToDBServer(notOkMessage) == -1){
+								perror("msgsnd: msgsnd to ATM failed\n");
+								exit(1);
+							}
+							else{
+								printf("msgsnd: msgsnd to ATM sucess\n");
+							}
+							database[i].attempts +=1;
+							if(database[i].attempts  == 3){
+								blockAccount(ATMMessage);
+							}
+						}
 					}
 					break;
 				case 4: //request funds
 					printf("Request Funds Message Received From ATM\n");
 					my_message fundsMessage;
+					fundsMessage.message_type = getFunds;
 					fundsMessage.accountInfo = ATMMessage.accountInfo;
 					fundsMessage.funds = database[searchDatabase(ATMMessage)].fundsAvailable;
+					printf("%f\n",fundsMessage.funds);
 					if(sendMessageToDBServer(fundsMessage) == -1){
 						perror("msgsnd: msgsnd to ATM failed\n");
 						exit(1);
@@ -130,29 +141,19 @@ void DBServer(){
 							printf("msgsnd: msgsnd to ATM sucess\n");
 					}
 					break;
-				default:
-					printf("Default Option\n");
-					break;
 			}
-			printf("now what?\n");
 		}
 		
 		//receive all from editor
 		my_message UpdateMessage;
-		if(receiveMessageFromDBEditor(UpdateMessage) == -1){
+		int msgLength2 = sizeof(my_message) - sizeof(long);
+		if(msgrcv(ServerEditorMsgqid, &UpdateMessage, msgLength2, 6, IPC_NOWAIT) == -1){
 			//If receiving failed print error and exit
-			perror("msgrcv: msgrcv from editor failed\n");
-			exit(1);
 		}
 		else{
 			//if received, edit file
 			printf("UpdateDB Message Received From Editor\n");
-			Account newAccount;
-			//TODO
-			database[getSize(database)+1] = newAccount;
-			writeToDatabase();
-			printf("Edited Database Successfully\n");
-			
+			updateDatabase(UpdateMessage);
 		}
 	}
 }
@@ -161,22 +162,47 @@ void DBServer(){
 void initializeDatabase(){
 	Account account1, account2, account3;
 	strcpy(account1.accountNumber,"00001");
-	strcpy(account1.encodedPIN,"107");
-	account1.fundsAvailable = 3443.22;
+	account1.accountNumber[5] = '\0';
+	strcpy(account1.encodedPIN,"218");
+	account1.fundsAvailable = (float)3443.22;
+	account1.encodedPIN[3] = '\0';
+	account1.attempts = 0;
 	
 	strcpy(account2.accountNumber,"00011");
-	strcpy(account2.encodedPIN,"323");
+	account2.accountNumber[5] = '\0';
+	strcpy(account2.encodedPIN,"434");
 	account2.fundsAvailable = 10089.97;
+	account1.encodedPIN[3] = '\0';
+	account2.attempts = 0;
 	
 	strcpy(account3.accountNumber,"00117");
-	strcpy(account3.encodedPIN,"259");
+	account3.accountNumber[5] = '\0';
+	strcpy(account3.encodedPIN,"360");
 	account3.fundsAvailable = 112.00;
+	account1.encodedPIN[3] = '\0';
+	account3.attempts = 0;
 	
 	database[0] = account1;
 	database[1] = account2;
 	database[2] = account3;
 	writeToDatabase();
 	
+}
+
+void updateDatabase(my_message msg){
+	Account account;;
+	strcpy(account.accountNumber,msg.accountInfo.accountNum);
+	account.accountNumber[5] = '\0';
+	strcpy(account.encodedPIN,msg.accountInfo.pin);
+	account.fundsAvailable = (float)3443.22;
+	account.encodedPIN[3] = '\0';
+	account.attempts = 0;
+	
+	//allocate memory
+	//add to database
+	
+	writeToDatabase();
+	printf("Edited Database Successfully\n");
 }
 
 void createMessageQueues(){
@@ -205,7 +231,7 @@ void writeToDatabase(){
 	}
 	int i;
 	for(i = 0; i<getSize(database);++i){
-		fprintf(output, "%s\t%s\t%f\n",database[i].accountNumber, database[i].encodedPIN, database[i].fundsAvailable);
+		fprintf(output, "%s\t%s\t%.2f\n",database[i].accountNumber, database[i].encodedPIN, database[i].fundsAvailable);
 	}
 	fclose(output);
 }
@@ -225,15 +251,6 @@ int withdrawFromAccount(my_message msg){
 int sendMessageToDBServer(my_message msg){
 	int msgLength = sizeof(my_message) - sizeof(long);
 	return msgsnd(ServerATMMsgqid, &msg, msgLength,0);
-}
-int receiveMessageFromDBServer(my_message msg){
-	int msgLength = sizeof(my_message) - sizeof(long);
-	return msgrcv(ATMServerMsgqid, &msg, msgLength, 0, 0);
-}
-
-int receiveMessageFromDBEditor(my_message msg){
-	int msgLength = sizeof(my_message) - sizeof(long);
-	return msgrcv(ServerEditorMsgqid, &msg, msgLength, 6, 0);
 }
 
 void blockAccount(my_message msg){
@@ -265,7 +282,7 @@ void encodePIN(char originalPin[3],char encodedPin[3]){
 	}
 }
 	
-void decodePIN(char originalPin[3],char decodedPin[3]){
+void decodePIN(char originalPin[3],char decodedPin[4]){
 	
 	int i;
 	for(i = 0; i < 3; i++){
@@ -276,6 +293,7 @@ void decodePIN(char originalPin[3],char decodedPin[3]){
 			decodedPin[i] = originalPin[i] -1;
 		} 
 	}
+	decodedPin[3] = '\0';
 }
 
 int getSize(){

@@ -3,8 +3,8 @@
 
 
 typedef struct PINMessage{
-	char accountNum[5];
-	char pin[3];
+	char accountNum[6];
+	char pin[4];
 	
 }PINMessage;
 

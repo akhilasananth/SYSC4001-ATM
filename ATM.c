@@ -9,21 +9,21 @@
 
 void createMessageQueues();
 void ATM();
-void requestAccountInformation(PINMessage aInfo);
-void requestCustomer(PINMessage aInfo, int maxSize);
+PINMessage requestCustomer();
 void checkForExit(char * userInput);
 int sendMessageToDBServer(my_message msg);
-int receiveMessageFromDBServer(my_message msg);
 int requestUserForNextStep();
 int requestWithdrawAmount();
+void printPin(char pin[3]);
 
-int attempts = 0;
-char * prevAccount;
+
+//Variables
 int ATMServerMsgqid;
 int ServerATMMsgqid;
 
 int main (void){
 
+	printf("Starting ATM...\nType \"X\" to exit\n");
 	createMessageQueues();
 	ATM();
 	
@@ -32,35 +32,35 @@ int main (void){
 
 void ATM(){
 	while(1){
-		printf("Starting ATM...\nType \"X\" to exit\n");
 		//Get account information
 		PINMessage aInfo;
-		requestAccountInformation(aInfo);
-	
+		aInfo = requestCustomer();
+
 		//Create PIN Message and send to DB Server
 		my_message msg;
 		msg.message_type = pinMessage;
-		msg.accountInfo = aInfo;
-		msg.funds = 12345;
+		strcpy(msg.accountInfo.accountNum,aInfo.accountNum);
+		strcpy(msg.accountInfo.pin,aInfo.pin);
 		
 		if(sendMessageToDBServer(msg) == -1){
 			perror("msgsnd: msgsnd failed\n");
 			exit(1);
 		}
 		else{
-			printf("msgsnd: msgsnd to ServerDB sucess\n");
+			//printf("msgsnd: msgsnd to ServerDB sucess\n");
 		}
 	
 		//Receive a "OK" or "NOT OKAY" message
 		my_message okNotOkaymsg;
 		printf("Waiting for Response from Server...\n");
-		if(receiveMessageFromDBServer(okNotOkaymsg) == -1){
+		int msgLength = sizeof(my_message) - sizeof(long);
+		if(msgrcv(ServerATMMsgqid, &okNotOkaymsg, msgLength, 0, 0) == -1){
 			//If receiving failed print error and exit
 			perror("msgrcv: msgrcv failed\n");
 			exit(1);
 		}
 		else{
-			printf("msgrcv: msgrcv from ServerDB sucess\n");
+			//printf("msgrcv: msgrcv from ServerDB sucess\n");
 			//if the message is ok
 			if(okNotOkaymsg.message_type == ok){
 				printf("PIN number OK!");
@@ -69,13 +69,16 @@ void ATM(){
 				//request user for request funds or withdraw
 				int response = requestUserForNextStep();
 				if(response == 1){ //request Funds
+					printf("i am here\n");
 					fundsMsg.message_type = requestFunds;
-					fundsMsg.accountInfo = aInfo;
+					strcpy(fundsMsg.accountInfo.accountNum,aInfo.accountNum);
+					strcpy(fundsMsg.accountInfo.pin,aInfo.pin);
 					
 				}
 				else if(response == 2){ //withdraw
 					fundsMsg.message_type = withdraw;
-					fundsMsg.accountInfo = aInfo;
+					strcpy(fundsMsg.accountInfo.accountNum,aInfo.accountNum);
+					strcpy(fundsMsg.accountInfo.pin,aInfo.pin);
 					fundsMsg.withdrawAmount = requestWithdrawAmount();
 				}
 				//Send message to server
@@ -84,20 +87,21 @@ void ATM(){
 					exit(1);
 				}
 				else{
-					printf("msgsnd: msgsnd to ServerDB sucess\n");
+					//printf("msgsnd: msgsnd to ServerDB sucess\n");
 				}
 				
 				my_message fundsResponseMsg;
-				if(receiveMessageFromDBServer(fundsResponseMsg) == -1){
+				int msgLength2 = sizeof(my_message) - sizeof(long);
+				if(msgrcv(ServerATMMsgqid, &fundsResponseMsg, msgLength2, 0, 0) == -1){
 					//If receiving failed print error and exit
 					perror("msgrcv: msgrcv failed\n");
 					exit(1);
 				}
 				else{
-					printf("msgrcv: msgrcv from ServerDB sucess\n");
+					//printf("msgrcv: msgrcv from ServerDB sucess\n");
 					
 					if(fundsResponseMsg.message_type == getFunds){ //funds
-						printf("Available Funds: %f\n",fundsResponseMsg.funds);
+						printf("Available Funds: %.2f\n",fundsResponseMsg.funds);
 					}else if(fundsResponseMsg.message_type == notEnoughFunds){ //not enough funds
 						perror("Not Enough Funds\n");
 					}else if(fundsResponseMsg.message_type == enoughFunds){ //enough funds
@@ -108,64 +112,48 @@ void ATM(){
 			}
 			else if(okNotOkaymsg.message_type == notOk){
 				//got a pin not okay message
-				perror("PIN Not OK, Please try again\n");
-				if(strcmp(prevAccount,okNotOkaymsg.accountInfo.accountNum)==0){
-					attempts = attempts +1;
-					if(attempts == 3){
-						printf("PIN Not OK, Account : %s Blocked!\n",prevAccount);
-						attempts = 0;
-						break;
-					}
-				}
-				else{
-					prevAccount = okNotOkaymsg.accountInfo.accountNum;
-				}
+				perror("PIN Not OK\n");
 			}
 		}
 	}
 }
 
-//This method requests account number and pin from the customer
-void requestAccountInformation(PINMessage aInfo){
-	
-	//Requests an account number
-	requestCustomer(aInfo,5);
-	
-	//Requests a PIN
-	requestCustomer(aInfo,3);
-}
 
 //Here if it requests the account number then the maxSize is 5 and 
 //if it requests the pin, then the maxSize is 3
-void requestCustomer(PINMessage aInfo, int maxSize){
-	char userInput[100];
+PINMessage requestCustomer(){
+	PINMessage customerInput;
 	while(1){
-		if(maxSize == 5){
-			printf("Enter your %d digit account number: ",maxSize);
-		}
-		else{
-			printf("Enter your %d digit PIN number: ",maxSize);
-		}
-		scanf("%s", userInput);
-		checkForExit(userInput);
 		
-		if(strlen(userInput) != maxSize){
+		printf("Enter your 5 digit account number: ");
+		scanf("%s", customerInput.accountNum);
+		customerInput.accountNum[5] = '\0';
+		checkForExit(customerInput.accountNum);
+		
+		if(strlen(customerInput.accountNum) != 5){
 			perror("Invalid entry\n");
 			continue;
 		}
-		
-		else{
-			if(maxSize == 5){
-				strcpy(aInfo.accountNum,userInput);
-				prevAccount = userInput;
-			}
-			else{
-				strcpy(aInfo.pin,userInput);
-			}
-			break;
+
+		printf("Enter your 3 digit PIN number: ");
+		scanf("%s", customerInput.pin);
+		customerInput.pin[3] = '\0';
+
+		checkForExit(customerInput.pin);
+
+		while(strlen(customerInput.pin) != 3){
+			perror("Invalid entry\n");
+			printf("Enter your 3 digit PIN number: ");
+			scanf("%s", customerInput.pin);
+			customerInput.pin[3] = '\0';
+
+			checkForExit(customerInput.pin);
+			
 		}
+		break;
+
 	}
-	
+	return customerInput;
 }
 
 void createMessageQueues(){
@@ -182,7 +170,7 @@ void createMessageQueues(){
 }
 
 void checkForExit(char * userInput){
-	if(strcmp(userInput,"X")==0){
+	if(strcmp(userInput,"X")==0 || strcmp(userInput,"x")==0 ){
 		printf("Closing ATM\n");
 		exit(1);
 	}
@@ -192,11 +180,6 @@ void checkForExit(char * userInput){
 int sendMessageToDBServer(my_message msg){
 	int msgLength = sizeof(my_message) - sizeof(long);
 	return msgsnd(ATMServerMsgqid, &msg, msgLength,0);
-}
-
-int receiveMessageFromDBServer(my_message msg){
-	int msgLength = sizeof(my_message) - sizeof(long);
-	return msgrcv(ServerATMMsgqid, &msg, msgLength, 0, 0);
 }
 
 //need fixing
@@ -210,11 +193,11 @@ int requestUserForNextStep(){
 		//checkForExit(userInput);
 		
 		if(userInput == 1){ //Withdraw message
-			printf("\nRequest Funds:\n");
+			printf("Requesting Funds...\n");
 			break;
 		}
 		else if(userInput == 2){ //Request Funds
-			printf("\nWithrdaw:\n");
+			printf("\nWithrdawing Funds...\n");
 			break;
 		}
 		else{
@@ -227,8 +210,16 @@ int requestUserForNextStep(){
 //needs fixing
 int requestWithdrawAmount(){
 	float userInput;
+	char* fundsInput = ""; 
 	printf("\nEnter Withdraw Amount: ");
 	scanf("%f", &userInput);
-	//checkForExit(userInput);
+	sprintf(fundsInput,"%f",userInput);
 	return userInput;
+}
+
+void printPin(char pin[3]){
+	int i;
+	for(i = 0; i<3; i++){
+		printf("%c \n",pin[i]);
+	}
 }
