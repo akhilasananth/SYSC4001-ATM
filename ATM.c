@@ -69,7 +69,6 @@ void ATM(){
 				//request user for request funds or withdraw
 				int response = requestUserForNextStep();
 				if(response == 1){ //request Funds
-					printf("i am here\n");
 					fundsMsg.message_type = requestFunds;
 					strcpy(fundsMsg.accountInfo.accountNum,aInfo.accountNum);
 					strcpy(fundsMsg.accountInfo.pin,aInfo.pin);
