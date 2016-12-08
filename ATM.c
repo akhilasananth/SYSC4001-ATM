@@ -182,7 +182,6 @@ int sendMessageToDBServer(my_message msg){
 	return msgsnd(ATMServerMsgqid, &msg, msgLength,0);
 }
 
-//need fixing
 int requestUserForNextStep(){
 	int userInput;
 	while(1){
@@ -190,7 +189,6 @@ int requestUserForNextStep(){
 		printf("(1) Request Funds\n");
 		printf("(2) Withdraw\n");
 		scanf("%d", &userInput);
-		//checkForExit(userInput);
 		
 		if(userInput == 1){ //Withdraw message
 			printf("Requesting Funds...\n");
@@ -207,13 +205,10 @@ int requestUserForNextStep(){
 	return userInput;
 }
 
-//needs fixing
 int requestWithdrawAmount(){
 	float userInput;
-	char* fundsInput = ""; 
 	printf("\nEnter Withdraw Amount: ");
 	scanf("%f", &userInput);
-	sprintf(fundsInput,"%f",userInput);
 	return userInput;
 }
 
