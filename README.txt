@@ -1,3 +1,7 @@
+* TEAM MEMBERS
+	- Shasthra Ranasinghe (100867803)
+	- Akhila Ananth	(100894838)
+
 * LIST OF FILES
 
 Part1.docx
