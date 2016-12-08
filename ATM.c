@@ -41,6 +41,7 @@ void ATM(){
 		my_message msg;
 		msg.message_type = pinMessage;
 		msg.accountInfo = aInfo;
+		msg.funds = 12345;
 		
 		if(sendMessageToDBServer(msg) == -1){
 			perror("msgsnd: msgsnd failed\n");
@@ -52,6 +53,7 @@ void ATM(){
 	
 		//Receive a "OK" or "NOT OKAY" message
 		my_message okNotOkaymsg;
+		printf("Waiting for Response from Server...\n");
 		if(receiveMessageFromDBServer(okNotOkaymsg) == -1){
 			//If receiving failed print error and exit
 			perror("msgrcv: msgrcv failed\n");
@@ -189,12 +191,12 @@ void checkForExit(char * userInput){
 
 int sendMessageToDBServer(my_message msg){
 	int msgLength = sizeof(my_message) - sizeof(long);
-	return msgsnd(ServerATMMsgqid, &msg, msgLength,0);
+	return msgsnd(ATMServerMsgqid, &msg, msgLength,0);
 }
 
 int receiveMessageFromDBServer(my_message msg){
 	int msgLength = sizeof(my_message) - sizeof(long);
-	return msgrcv(ATMServerMsgqid, &msg, msgLength, 0, 0);
+	return msgrcv(ServerATMMsgqid, &msg, msgLength, 0, 0);
 }
 
 //need fixing
