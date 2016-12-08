@@ -160,21 +160,35 @@ void initializeDatabase(){
 }
 
 void updateDatabase(my_message msg){
-	Account account;
-	strcpy(account.accountNumber,msg.accountInfo.accountNum);
-	account.accountNumber[5] = '\0';
-	strcpy(account.encodedPIN,msg.accountInfo.pin);
-	account.fundsAvailable = (float)msg.funds;
-	account.encodedPIN[3] = '\0';
-	account.attempts = 0;
-	char encodedPin[4];
-	encodePIN(account.encodedPIN,encodedPin);
-	strcpy(account.encodedPIN,encodedPin);
-	
-	//add to database
-	database[getSize()] = account;
-	
-	writeToDatabase();
+	int i = searchDatabase(msg);
+	if(i == -1){
+		Account account;
+		strcpy(account.accountNumber,msg.accountInfo.accountNum);
+		account.accountNumber[5] = '\0';
+		strcpy(account.encodedPIN,msg.accountInfo.pin);
+		account.fundsAvailable = (float)msg.funds;
+		account.encodedPIN[3] = '\0';
+		account.attempts = 0;
+		char encodedPin[4];
+		encodePIN(account.encodedPIN,encodedPin);
+		strcpy(account.encodedPIN,encodedPin);
+		
+		//add to database
+		database[getSize()] = account;
+		
+		writeToDatabase();
+	}
+	else{
+		strcpy(database[i].encodedPIN,msg.accountInfo.pin);
+		database[i].fundsAvailable = (float)msg.funds;
+		database[i].encodedPIN[3] = '\0';
+		database[i].attempts = 0;
+		char encodedPin[4];
+		encodePIN(database[i].encodedPIN,encodedPin);
+		strcpy(database[i].encodedPIN,encodedPin);
+		
+		writeToDatabase();
+	}
 }
 
 void createMessageQueues(){

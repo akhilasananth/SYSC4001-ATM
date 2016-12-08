@@ -82,6 +82,8 @@ int main (void){
 		if(msgsnd(ServerEditorMsgqid, &editorInput, msgLength,0) == -1){
 			perror("msgsnd: msgsnd failed\n");
 			exit(1);
+		}else{
+			printf("Success: Update Message sent to the Server\n\n");
 		}
 	}
 	return 1;
