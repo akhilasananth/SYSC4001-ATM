@@ -35,7 +35,7 @@ For part B
 The following commands are needed to run the three c files concurrently
 note each command needs to be run in their own individual terminal.
 
-gcc -o partB_ATM.o partB_ATM.c
+gcc -o partB_ATM.o partB_ATM.c -pthread
 ./partB
 
 
