@@ -149,11 +149,10 @@ PINMessage requestCustomer(){
 			perror("Invalid entry\n");
 			printf("Enter your 3 digit PIN number: ");
 			scanf("%s", customerInput.pin);
-			customerInput.pin[3] = '\0';
-
 			checkForExit(customerInput.pin);
 			
 		}
+		customerInput.pin[3] = '\0';
 		break;
 
 	}
@@ -188,15 +187,11 @@ int sendMessageToDBServer(my_message msg){
 
 int requestUserForNextStep(){
 	int userInput;
-	char* nextInput;
-	nextInput = (char *)malloc(50);
 	while(1){
 		printf("\nEnter the number corresponding to your choice:\n");
 		printf("(1) Request Funds\n");
 		printf("(2) Withdraw\n");
 		scanf("%d", &userInput);
-		sprintf(nextInput,"%d",userInput);
-		checkForExit(nextInput);
 		
 		if(userInput == 1){ //Withdraw message
 			printf("Requesting Funds...\n");

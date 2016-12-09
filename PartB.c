@@ -309,6 +309,7 @@ void *userInputMethod(void *arg){
 		printf("Choose one of the options:\n");
 		printf("(1) ATM\n");
 		printf("(2) DBEditor\n");
+		printf("(3) EXIT\n");
 		scanf("%d", &input);
 		
 		
@@ -467,7 +468,6 @@ void *userInputMethod(void *arg){
 		
 		else if(input == 2){
 			//Variables
-			char* fundsInput;
 			int iANum;
 			int retANum = 1;
 			
@@ -481,7 +481,6 @@ void *userInputMethod(void *arg){
 			}
 			//Get account information
 			my_message editorInput;
-			fundsInput = (char *)malloc(50);
 			while(1){
 				
 				printf("Enter your 5 digit account number: ");
@@ -537,13 +536,6 @@ void *userInputMethod(void *arg){
 				do{ 
 					printf("Enter funds available: ");
 					scanf("%f", &editorInput.funds);
-					sprintf(fundsInput,"%f",editorInput.funds);
-					
-					if(strcmp(fundsInput,"X")==0 || strcmp(fundsInput,"x")==0 ){
-						printf("Closing ATM\n");
-						exit(1);
-						}
-						
 				}while(editorInput.funds< 0); //Checks for negative money
 				break;
 			}
@@ -559,7 +551,13 @@ void *userInputMethod(void *arg){
 			}
 			printf("Closing DB Editor...\n\n");
 		}
-		
+		else if(input == 3){
+			printf("Closing ATM\n");
+			exit(1);
+		}
+		else{
+			perror("Invalid entry\n");
+		}
 	}
 }
 

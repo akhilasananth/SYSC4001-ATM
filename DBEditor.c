@@ -52,8 +52,6 @@ int main (void){
 			do{ 
 				printf("Enter funds available: ");
 				scanf("%f", &editorInput.funds);
-				sprintf(fundsInput,"%f",editorInput.funds);
-				checkForExit(fundsInput);
 			}while(editorInput.funds< 0); //Checks for negative money
 		}
 		//********************************************************

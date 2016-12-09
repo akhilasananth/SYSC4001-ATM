@@ -142,14 +142,14 @@ void initializeDatabase(){
 	strcpy(account2.accountNumber,"00011");
 	account2.accountNumber[5] = '\0';
 	strcpy(account2.encodedPIN,"434");
-	account2.fundsAvailable = 10089.97;
+	account2.fundsAvailable = (float)10089.97;
 	account1.encodedPIN[3] = '\0';
 	account2.attempts = 0;
 	
 	strcpy(account3.accountNumber,"00117");
 	account3.accountNumber[5] = '\0';
 	strcpy(account3.encodedPIN,"360");
-	account3.fundsAvailable = 112.00;
+	account3.fundsAvailable = (float)112.00;
 	account1.encodedPIN[3] = '\0';
 	account3.attempts = 0;
 	
