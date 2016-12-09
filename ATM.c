@@ -13,13 +13,15 @@ PINMessage requestCustomer();
 void checkForExit(char * userInput);
 int sendMessageToDBServer(my_message msg);
 int requestUserForNextStep();
-int requestWithdrawAmount();
+float requestWithdrawAmount();
 void printPin(char pin[3]);
 
 
 //Variables
 int ATMServerMsgqid;
 int ServerATMMsgqid;
+
+
 
 int main (void){
 
@@ -75,10 +77,12 @@ void ATM(){
 					
 				}
 				else if(response == 2){ //withdraw
+					
 					fundsMsg.message_type = withdraw;
 					strcpy(fundsMsg.accountInfo.accountNum,aInfo.accountNum);
 					strcpy(fundsMsg.accountInfo.pin,aInfo.pin);
 					fundsMsg.withdrawAmount = requestWithdrawAmount();
+					
 				}
 				//Send message to server
 				if(sendMessageToDBServer(fundsMsg) == -1){
@@ -126,13 +130,14 @@ PINMessage requestCustomer(){
 		
 		printf("Enter your 5 digit account number: ");
 		scanf("%s", customerInput.accountNum);
-		customerInput.accountNum[5] = '\0';
+		
 		checkForExit(customerInput.accountNum);
 		
 		if(strlen(customerInput.accountNum) != 5){
 			perror("Invalid entry\n");
 			continue;
 		}
+		customerInput.accountNum[5] = '\0';
 
 		printf("Enter your 3 digit PIN number: ");
 		scanf("%s", customerInput.pin);
@@ -183,11 +188,15 @@ int sendMessageToDBServer(my_message msg){
 
 int requestUserForNextStep(){
 	int userInput;
+	char* nextInput;
+	nextInput = (char *)malloc(50);
 	while(1){
 		printf("\nEnter the number corresponding to your choice:\n");
 		printf("(1) Request Funds\n");
 		printf("(2) Withdraw\n");
 		scanf("%d", &userInput);
+		sprintf(nextInput,"%d",userInput);
+		checkForExit(nextInput);
 		
 		if(userInput == 1){ //Withdraw message
 			printf("Requesting Funds...\n");
@@ -204,10 +213,14 @@ int requestUserForNextStep(){
 	return userInput;
 }
 
-int requestWithdrawAmount(){
+float requestWithdrawAmount(){
+	char* fundsInput;
+	fundsInput = (char *)malloc(50);
 	float userInput;
 	printf("\nEnter Withdraw Amount: ");
 	scanf("%f", &userInput);
+	sprintf(fundsInput,"%f",userInput);
+	checkForExit(fundsInput);
 	return userInput;
 }
 

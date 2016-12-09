@@ -9,7 +9,8 @@
 #include <ctype.h>
 
 void checkForExit(char* userInput);
-int checkIfNumbers(char* arr);
+int checkIfNumbersANum(char arr[5]);
+int checkIfNumbersPin(char arr[3]);
 
 //Variables
 int ServerEditorMsgqid;
@@ -18,6 +19,7 @@ int main (void){
 	
 	printf("Starting DBEditor...\n Type \"X\" to exit\n");
 	ServerEditorMsgqid = msgget((key_t)123456, IPC_CREAT| 0600);
+	
 	if(ServerEditorMsgqid == -1){
 		perror("msgget: ATMServerMsgqid failed\n");
 		exit(1);
@@ -25,55 +27,34 @@ int main (void){
 	while(1){
 	//Get account information
 	my_message editorInput;
-	fundsInput = (char *)malloc(100);
+	fundsInput = (char *)malloc(50);
 		while(1){
 			
 			printf("Enter your 5 digit account number: ");
 			scanf("%s", editorInput.accountInfo.accountNum);
-			editorInput.accountInfo.accountNum[5] = '\0';
-			if(strcmp(editorInput.accountInfo.accountNum,"X")==0 || strcmp(editorInput.accountInfo.accountNum,"x")==0 ){
-				printf("Closing ATM\n");
-				exit(1);
-			}
+			
+			checkForExit(editorInput.accountInfo.accountNum);
 			
 			
-			if(strlen(editorInput.accountInfo.accountNum) != 5 || checkIfNumbers(editorInput.accountInfo.accountNum)==0){
+			if((strlen(editorInput.accountInfo.accountNum) != 5) || (checkIfNumbersANum(editorInput.accountInfo.accountNum)==0)){
 				perror("Invalid entry\n");
 				continue;
 			}
-
-			printf("Enter your 3 digit PIN number: ");
-			scanf("%s", editorInput.accountInfo.pin);
-			editorInput.accountInfo.pin[3] = '\0';
-			if(strcmp(editorInput.accountInfo.pin,"X")==0 || strcmp(editorInput.accountInfo.pin,"x")==0 ){
-				printf("Closing ATM\n");
-				exit(1);
-			}
-
-			while(strlen(editorInput.accountInfo.pin) != 3 || checkIfNumbers(editorInput.accountInfo.pin)==0){
-				perror("Invalid entry\n");
+			editorInput.accountInfo.accountNum[5] = '\0';
+			
+			do{
 				printf("Enter your 3 digit PIN number: ");
 				scanf("%s", editorInput.accountInfo.pin);
 				editorInput.accountInfo.pin[3] = '\0';
-				if(strcmp(editorInput.accountInfo.pin,"X")==0 || strcmp(editorInput.accountInfo.pin,"x")==0 ){
-					printf("Closing ATM\n");
-					exit(1);
-				}
-				
-			}
-			 
-			printf("Enter funds available: ");
-			scanf("%f", &editorInput.funds);
-			sprintf(fundsInput,"%f",editorInput.funds);
-			checkForExit(fundsInput);
+				checkForExit(editorInput.accountInfo.pin);
+			}while(strlen(editorInput.accountInfo.pin) != 3 || checkIfNumbersPin(editorInput.accountInfo.pin)==0);
 
-			while(editorInput.funds< 0 || !isdigit(editorInput.funds)){ //Checks for negative money
+			do{ 
 				printf("Enter funds available: ");
 				scanf("%f", &editorInput.funds);
 				sprintf(fundsInput,"%f",editorInput.funds);
 				checkForExit(fundsInput);
-			}
-			break;
+			}while(editorInput.funds< 0); //Checks for negative money
 		}
 		//********************************************************
 	
@@ -85,6 +66,7 @@ int main (void){
 				perror("msgsnd: msgsnd failed\n");
 				exit(1);
 			}
+			
 	}
 	return 1;
 }
@@ -96,15 +78,30 @@ void checkForExit(char* userInput){
 	}
 }
 
-int checkIfNumbers(char* arr){
+int checkIfNumbersANum(char arr[5]){
 	int i;
 	int ret = 1;
-	for(i = 0; i< sizeof(arr)/sizeof(char); i++){
-		if(isdigit(arr[i])){
-			ret = 0;
+	for(i = 0; i< 5; i++){
+		ret = isdigit(arr[i]);
+		if(ret == 0){
+			break;
 		}
 	}
 	
 	return ret;
 }
+
+int checkIfNumbersPin(char arr[3]){
+	int i;
+	int ret = 1;
+	for(i = 0; i< 3; i++){
+		ret = isdigit(arr[i]);
+		if(ret == 0){
+			break;
+		}
+	}
+	
+	return ret;
+}
+
 		
