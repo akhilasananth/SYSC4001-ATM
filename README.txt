@@ -59,7 +59,7 @@ gcc -o partB_ATM.o partB_ATM.c -pthread
 			- Something that could have changed was using the same queue for the EDITOR and the ATM
 				so instead of the SERVER alternating between ATM and EDITOR, it can just listen to the one queue
 	+ Part B
-		- The SERVER will be the main process that will spawn the ATM and EDITOR as as threads
+		- The SERVER will be the main process that will spawn the ATM and EDITOR as a single thread
 		- One implementation would be to have the ATM as a separate process. so that the SERVER and EDITOR
 			will be in a second process. Reasons behind this is that it is possible to have multiple ATMs
 			and the user should never have the option of editing the Database.
