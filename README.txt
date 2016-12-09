@@ -12,7 +12,6 @@ messageStructs.h
 messageTypes.h
 DB.txt
 partB.c
-partB_DB.txt
 
 
 * SETUP INSTRUCTIONS
@@ -22,21 +21,21 @@ The following commands are needed to run the three c files concurrently
 note each command needs to be run in their own individual terminal.
 
 gcc -o ATM.o ATM.c
-./ATM
+./ATM.o
 
 gcc -o DBEditor.o DbEditor.c
-./DBEditor
+./DBEditor.o
 
 gcc -o DBServer.o DBServer.c
-./DBServer
+./DBServer.o
 
 
 For part B
 The following commands are needed to run the three c files concurrently
 note each command needs to be run in their own individual terminal.
 
-gcc -o partB_ATM.o partB_ATM.c -pthread
-./partB
+gcc -o PartB.o PartB.c -pthread
+./PartB.o
 
 
 * DESIGN CHOICES
